@@ -61,7 +61,6 @@ Img *readPgmImg(char *filename) {
     img->width = width;
     img->height = height;
     img->pixelSize = pixelSize;
-    printf("Img %s: width %i, height %i, pixel size %i\n", filename, width, height, pixelSize);
     readPgmPixels(fp, img);
     fclose(fp);
     return img;
@@ -76,18 +75,33 @@ void writePgmImg(Img *img, char *filename) {
     fprintf(fp, "P5\n%i %i\n%i\n", img->width, img->height, img->pixelSize);
     // assumed only 8-bit images, change this to adapt to pgm format later on
     for (i = 0; i < img->height; i++)
-        for (j = 0; img->width; j++)
+        for (j = 0; j < img->width; j++)
             if (fwrite(&img->pixels[i][j], 1, 1, fp) != 1)
                 exit(IMG_WRITE_ERROR);
     fclose(fp);
 }
 
+unsigned **getPixels(Img *img) {
+    return img->pixels;
+}
+
+unsigned getWidth(Img *img) {
+    return img->width;
+}
+
+unsigned getHeight(Img *img) {
+    return img->height;
+}
+
+/** imgread test functions - erase later
 void testImgRead(char *inputFilename, char *outputFilename) {
     Img *img;
 
     img = readPgmImg(inputFilename);
     writePgmImg(img, outputFilename);
 }
+
+**/
 
 
 
