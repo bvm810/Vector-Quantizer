@@ -1,5 +1,5 @@
 #include "vq.h"
 
 int main() {
-    testVQ("treino/f16.pgm");
+    testVQ("treino/zelda.pgm", "output_files/teste.pgm");
 }

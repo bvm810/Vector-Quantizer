@@ -66,6 +66,15 @@ Img *readPgmImg(char *filename) {
     return img;
 }
 
+void freeImg(Img *img) {
+    unsigned i;
+
+    for (i = 0; i < img->height; i++)
+        free(img->pixels[i]);
+    free(img->pixels);
+    free(img);
+}
+
 void writePgmImg(Img *img, char *filename) {
     FILE *fp;
     unsigned i, j;
@@ -79,6 +88,18 @@ void writePgmImg(Img *img, char *filename) {
             if (fwrite(&img->pixels[i][j], 1, 1, fp) != 1)
                 exit(IMG_WRITE_ERROR);
     fclose(fp);
+    freeImg(img);
+}
+
+Img *createPgmImg(unsigned height, unsigned width, unsigned pixelSize, unsigned **pixels) {
+    Img *img;
+
+    img = malloc(sizeof(Img) + height * width * sizeof(int));
+    img->width = width;
+    img->height = height;
+    img->pixelSize = pixelSize;
+    img->pixels = pixels;
+    return img;
 }
 
 unsigned **getPixels(Img *img) {
