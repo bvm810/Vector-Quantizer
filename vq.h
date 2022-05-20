@@ -1,9 +1,9 @@
-#define MAX_WIDTH 2048
-#define MAX_HEIGHT 2048
 
 typedef struct img Img;
 typedef struct block Block;
 typedef struct blockMatrix BlockMatrix;
+typedef struct point Point;
+typedef struct cluster Cluster;
 
 unsigned **getPixels(Img *img);
 unsigned getWidth(Img *img);
