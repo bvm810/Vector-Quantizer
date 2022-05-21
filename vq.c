@@ -3,6 +3,7 @@
 #include "vq.h"
 
 #define QUANTIZATION_ERROR 3
+#define RECONSTRUCTION_ERROR 5
 
 struct block {
     unsigned width;
@@ -16,7 +17,7 @@ struct blockMatrix {
     Block ***blocks;
 };
 
-Block *createBlock(unsigned **pixels, unsigned row, unsigned col, unsigned width, unsigned height) {
+Block *createBlockFromPixels(unsigned **pixels, unsigned row, unsigned col, unsigned width, unsigned height) {
     Block *block;
     unsigned i, j;
 
@@ -27,6 +28,20 @@ Block *createBlock(unsigned **pixels, unsigned row, unsigned col, unsigned width
     for (i = 0; i < height; i++)
         for (j = 0; j < width; j++)
             block->vector[width * i + j] = pixels[row + i][col + j];
+    return block;
+}
+
+Block *createBlockFromCluster(Cluster *cluster, unsigned width, unsigned height) {
+    Block *block;
+    unsigned i, j;
+
+    block = malloc(sizeof(Block) + width * height * sizeof(int));
+    block->width = width;
+    block->height = height;
+    block->vector = malloc(width * height * sizeof(int));
+    for (i = 0; i < height; i++)
+        for (j = 0; j < width; j++)
+            block->vector[width * i + j] = getClusterCoords(cluster)[width * i + j];
     return block;
 }
 
@@ -51,11 +66,11 @@ Block ***getImgBlocks(unsigned **pixels, unsigned nrows, unsigned ncols, unsigne
     unsigned i, j;
     Block ***blocks;
 
-    blocks = malloc(nrows * sizeof(Block *));
+    blocks = malloc(nrows * sizeof(Block **));
     for (i = 0; i < nrows; i++) {
-        blocks[i] = malloc(ncols * sizeof(Block));
+        blocks[i] = malloc(ncols * sizeof(Block *));
         for (j = 0; j < ncols; j++)
-            blocks[i][j] = createBlock(pixels, i * blockHeight, j * blockWidth, blockWidth, blockHeight);
+            blocks[i][j] = createBlockFromPixels(pixels, i * blockHeight, j * blockWidth, blockWidth, blockHeight);
     }
     return blocks;
 }
@@ -81,11 +96,10 @@ BlockMatrix *vectorizeImg(Img *img, unsigned blockWidth, unsigned blockHeight) {
     pixels = getPixels(img);
     if ((imgWidth % blockWidth != 0) || (imgHeight % blockHeight))
         exit(QUANTIZATION_ERROR);
-    vectorizedImg = malloc(sizeof(BlockMatrix) + (imgHeight / blockHeight) * (imgWidth / blockWidth) * sizeof(Block));
+    vectorizedImg = malloc(sizeof(BlockMatrix) + (imgHeight / blockHeight) * (imgWidth / blockWidth) * sizeof(Block *));
     vectorizedImg->nrows = imgHeight / blockHeight;
     vectorizedImg->ncols = imgWidth / blockWidth;
     vectorizedImg->blocks = getImgBlocks(pixels, imgHeight / blockHeight, imgWidth / blockWidth, blockWidth, blockHeight);
-    freeImg(img);
     return vectorizedImg;
 }
 
@@ -132,16 +146,52 @@ Block ***getBlockMatrixBlocks(BlockMatrix *vImg) {
     return vImg->blocks;
 }
 
+unsigned *quantizeBlockMatrix(unsigned K, Cluster *clusters, BlockMatrix *vImg) {
+    unsigned *idxList;
+    Point *p;
+    unsigned i, j;
+
+    idxList = malloc(vImg->nrows * vImg->ncols * sizeof(int));
+    for (i = 0; i < vImg->nrows; i++)
+        for (j = 0; j < vImg->ncols; j++) {
+            p = pointFromBlock(vImg->blocks[i][j]);
+            assignCentroid(K, clusters, p);
+            idxList[i * vImg->ncols + j] = getCluster(p);
+        }
+    return idxList;
+}
+
+BlockMatrix *reconstructBlockMatrix(Cluster *clusters, unsigned* idxList, unsigned blockHeight, unsigned blockWidth, unsigned imgHeight, unsigned imgWidth) {
+    unsigned nrows, ncols;
+    BlockMatrix *vImg;
+    Block ***blocks;
+    unsigned i, j;
+
+    if ((imgWidth % blockWidth != 0) || (imgHeight % blockHeight))
+        exit(RECONSTRUCTION_ERROR);
+    nrows = imgHeight / blockHeight;
+    ncols = imgWidth / blockWidth;
+    vImg = malloc(sizeof(BlockMatrix) + (imgHeight / blockHeight) * (imgWidth / blockWidth) * sizeof(Block *));
+    vImg->nrows = nrows;
+    vImg->ncols = ncols;
+    vImg->blocks = getIdxListBlocks(clusters, idxList, nrows, ncols, blockWidth, blockHeight);
+    return vImg;
+}
+
 void testVQ(char *filenameInput, char *filenameOutput) {
     Img *ogImg, *outImg;
-    BlockMatrix *vImg;
+    BlockMatrix *vInImg, *vOutImg;
     Point *points;
     Cluster *clusters;
+    unsigned K = 700, blockWidth = 1, blockHeight = 1, *idxList;
 
     ogImg = readPgmImg(filenameInput);
-    vImg = vectorizeImg(ogImg, 2, 2);
-    points = pointsFromBlockMatrix(vImg);
-    clusters = calculateCentroids(10000, points, getBlockMatrixHeight(vImg) * getBlockMatrixWidth(vImg), 10);
-    outImg = deVectorizeImg(vImg);
+    vInImg = vectorizeImg(ogImg, blockWidth, blockHeight);
+    // todo agrupar todas as operacoes com pontos em uma funcao quantize
+    points = pointsFromBlockMatrix(vInImg);
+    clusters = calculateCentroids(K, points, getBlockMatrixHeight(vInImg) * getBlockMatrixWidth(vInImg), 10);
+    idxList = quantizeBlockMatrix(K, clusters, vInImg);
+    vOutImg = reconstructBlockMatrix(clusters, idxList, blockHeight, blockWidth, getHeight(ogImg), getWidth(ogImg));
+    outImg = deVectorizeImg(vOutImg);
     writePgmImg(outImg, filenameOutput);
 }

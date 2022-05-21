@@ -53,7 +53,7 @@ unsigned getUnseenRandIdx(unsigned *prevIndexes, unsigned nPoints, unsigned *nPr
     return idx;
 }
 
-void initializeCentroids(int K, Point *points, unsigned nPoints, Cluster *newClusters, Cluster *oldClusters) {
+void initializeCentroids(unsigned K, Point *points, unsigned nPoints, Cluster *newClusters, Cluster *oldClusters) {
     int i, j;
     Point p;
     unsigned *prevIndexes = NULL, nPrev = 0;
@@ -70,7 +70,7 @@ void initializeCentroids(int K, Point *points, unsigned nPoints, Cluster *newClu
     free(prevIndexes);
 }
 
-char kMeansEndCondition(int K, Cluster *oldClusters, Cluster *newClusters) {
+char kMeansEndCondition(unsigned K, Cluster *oldClusters, Cluster *newClusters) {
     int k, i;
 
     for (k = 0; k < K; k++)
@@ -116,7 +116,7 @@ void removePointFromCluster(Cluster *cluster, Point *point) {
     free(aux);
 }
 
-void assignCentroid(int K, Cluster *clusters, Point *point) {
+void assignCentroid(unsigned K, Cluster *clusters, Point *point) {
     unsigned k, clusterIdx;
     double minDist, dist;
 
@@ -130,9 +130,9 @@ void assignCentroid(int K, Cluster *clusters, Point *point) {
     addPointToCluster(&clusters[clusterIdx], point);
 }
 
-void copyClusters(int K, Cluster *oldClusters, Cluster *newClusters) {
+void copyClusters(unsigned K, Cluster *oldClusters, Cluster *newClusters) {
     int k, j;
-    PointListElem *p;
+    // PointListElem *p;
 
     for (k = 0; k < K; k++) {
         // no need to cp points in cluster, they are never used in the old cluster
@@ -145,7 +145,7 @@ void copyClusters(int K, Cluster *oldClusters, Cluster *newClusters) {
     }
 }
 
-unsigned findLargestCluster(int K, Cluster *clusters) {
+unsigned findLargestCluster(unsigned K, Cluster *clusters) {
     int k;
     unsigned idx, max = 0;
 
@@ -157,7 +157,7 @@ unsigned findLargestCluster(int K, Cluster *clusters) {
     return idx;
 }
 
-void replaceEmptyClusters(int K, Cluster *clusters) {
+void replaceEmptyClusters(unsigned K, Cluster *clusters) {
     unsigned i, k, largest;
     PointListElem *p;
 
@@ -172,7 +172,7 @@ void replaceEmptyClusters(int K, Cluster *clusters) {
         }
 }
 
-void updateCentroids(int K, Cluster *clusters) {
+void updateCentroids(unsigned K, Cluster *clusters) {
     unsigned i, j, k;
     double *mean;
     PointListElem *p, *tmp;
@@ -214,7 +214,7 @@ void freeCluster(Cluster cluster) {
     free(cluster.centroid.coords);
 }
 
-void printClusters(int K, Cluster *clusters) {
+void printClusters(unsigned K, Cluster *clusters) {
     int i, k;
 
     for (k = 0; k < K; k++) {
@@ -225,10 +225,9 @@ void printClusters(int K, Cluster *clusters) {
     }
 }
 
-Cluster *calculateCentroids(int K, Point *points, unsigned nPoints, int seed) {
+Cluster *calculateCentroids(unsigned K, Point *points, unsigned nPoints, int seed) {
     Cluster *oldClusters, *newClusters;
-    int i, iterationCounter = 0;
-    clock_t begin, end;
+    int i;
 
     if (nPoints < K)
         exit(K_MEANS_ERROR);
@@ -236,30 +235,12 @@ Cluster *calculateCentroids(int K, Point *points, unsigned nPoints, int seed) {
     newClusters = malloc(K * (sizeof(Cluster) + points[0].ndim * sizeof(int)));
     oldClusters = malloc(K * (sizeof(Cluster) + points[0].ndim * sizeof(int)));
     initializeCentroids(K, points, nPoints, newClusters, oldClusters);
-    printf("Inicializei centroides ...\n");
-    // printClusters(K, newClusters);
     while (!kMeansEndCondition(K, oldClusters, newClusters)) {
-        begin = clock();
-        printf("Iteracao %i ... ", iterationCounter);
-        fflush(stdout);
         for (i = 0; i < nPoints; i++)
             assignCentroid(K, newClusters, &points[i]);
-        printf("Atribui centroides ... ");
-        fflush(stdout);
         replaceEmptyClusters(K, newClusters);
-        printf("Substitui centroides vazios... ");
-        fflush(stdout);
         copyClusters(K, oldClusters, newClusters);
-        printf("Copiei centroides novos ... ");
-        fflush(stdout);
-        // printClusters(K, oldClusters);
         updateCentroids(K, newClusters);
-        printf("Atualizei centroides ... ");
-        fflush(stdout);
-        end = clock();
-        printf("Tempo %f\n", (double) (end-begin) / CLOCKS_PER_SEC);
-        iterationCounter++;
-
     }
     for (i = 0; i < K; i++)
         freeCluster(oldClusters[i]);
@@ -267,14 +248,14 @@ Cluster *calculateCentroids(int K, Point *points, unsigned nPoints, int seed) {
     return newClusters;
 }
 
-Point pointFromBlock(Block *b) {
+Point *pointFromBlock(Block *b) {
     Point *p;
 
     p = malloc(sizeof(Point));
     p->cluster=0;
     p->ndim = getBlockHeight(b) * getBlockWidth(b);
     p->coords = getBlockVector(b);
-    return *p;
+    return p;
 }
 
 Point *pointsFromBlockMatrix(BlockMatrix *vImg) {
@@ -288,8 +269,30 @@ Point *pointsFromBlockMatrix(BlockMatrix *vImg) {
     pArray = malloc(getBlockMatrixWidth(vImg) * getBlockMatrixHeight(vImg) * sizeof(Point));
     for (i = 0; i < nrows; i++)
         for (j = 0; j < ncols; j++)
-            pArray[i * ncols + j] = pointFromBlock(blocks[i][j]);
+            pArray[i * ncols + j] = *pointFromBlock(blocks[i][j]);
     return pArray;
+}
+
+unsigned getCluster(Point *p) {
+    return p->cluster;
+}
+
+unsigned *getClusterCoords(Cluster *c) {
+    return c->centroid.coords;
+}
+
+Block ***getIdxListBlocks(Cluster *clusters, unsigned const *idxList, unsigned nrows, unsigned ncols, unsigned blockWidth, unsigned blockHeight) {
+    Block ***blocks;
+    unsigned i, j;
+
+    blocks = malloc(nrows * sizeof(Block **));
+    for (i = 0; i < nrows; i++) {
+        blocks[i] = malloc(ncols * sizeof(Block *));
+        for (j = 0; j < ncols; j++) {
+            blocks[i][j] = createBlockFromCluster(&clusters[idxList[i * ncols + j]], blockWidth, blockHeight);
+        }
+    }
+    return blocks;
 }
 
 
