@@ -30,6 +30,18 @@ Block *createBlock(unsigned **pixels, unsigned row, unsigned col, unsigned width
     return block;
 }
 
+unsigned getBlockWidth(Block *b) {
+    return b->width;
+}
+
+unsigned getBlockHeight(Block *b) {
+    return b->height;
+}
+
+unsigned *getBlockVector(Block *b) {
+    return b->vector;
+}
+
 void freeBlock(Block *block) {
     free(block->vector);
     free(block);
@@ -108,12 +120,28 @@ Img *deVectorizeImg(BlockMatrix *vectorizedImg) {
     return img;
 }
 
+unsigned getBlockMatrixHeight(BlockMatrix *vImg) {
+    return vImg->nrows;
+}
+
+unsigned getBlockMatrixWidth(BlockMatrix *vImg) {
+    return vImg->ncols;
+}
+
+Block ***getBlockMatrixBlocks(BlockMatrix *vImg) {
+    return vImg->blocks;
+}
+
 void testVQ(char *filenameInput, char *filenameOutput) {
     Img *ogImg, *outImg;
-    BlockMatrix *vectorizedImg;
+    BlockMatrix *vImg;
+    Point *points;
+    Cluster *clusters;
 
     ogImg = readPgmImg(filenameInput);
-    vectorizedImg = vectorizeImg(ogImg, 2, 2);
-    outImg = deVectorizeImg(vectorizedImg);
+    vImg = vectorizeImg(ogImg, 2, 2);
+    points = pointsFromBlockMatrix(vImg);
+    clusters = calculateCentroids(10, points, getBlockMatrixHeight(vImg) * getBlockMatrixWidth(vImg), 10);
+    outImg = deVectorizeImg(vImg);
     writePgmImg(outImg, filenameOutput);
 }
