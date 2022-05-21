@@ -141,7 +141,7 @@ void testVQ(char *filenameInput, char *filenameOutput) {
     ogImg = readPgmImg(filenameInput);
     vImg = vectorizeImg(ogImg, 2, 2);
     points = pointsFromBlockMatrix(vImg);
-    clusters = calculateCentroids(10, points, getBlockMatrixHeight(vImg) * getBlockMatrixWidth(vImg), 10);
+    clusters = calculateCentroids(10000, points, getBlockMatrixHeight(vImg) * getBlockMatrixWidth(vImg), 10);
     outImg = deVectorizeImg(vImg);
     writePgmImg(outImg, filenameOutput);
 }

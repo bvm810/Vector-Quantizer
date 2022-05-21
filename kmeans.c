@@ -100,11 +100,17 @@ void removePointFromCluster(Cluster *cluster, Point *point) {
     PointListElem *tmp, *aux;
 
     cluster->count -= 1;
-    tmp = cluster->points;
-    while ((tmp->next->point != point) && (tmp->next) != NULL)
-        tmp = tmp->next;
-    if (tmp->next->point != point)
+    if ((tmp = cluster->points) == NULL)
+        exit(K_MEANS_ERROR);
+    if (tmp->point == point) {
+        cluster->points = tmp->next;
+        free(tmp);
         return;
+    }
+    while ((tmp->next != NULL) && (tmp->next->point != point))
+        tmp = tmp->next;
+    if (tmp->next == NULL)
+        exit(K_MEANS_ERROR);
     aux = tmp->next;
     tmp->next = aux->next;
     free(aux);
@@ -129,10 +135,11 @@ void copyClusters(int K, Cluster *oldClusters, Cluster *newClusters) {
     PointListElem *p;
 
     for (k = 0; k < K; k++) {
-        oldClusters[k].count = newClusters[k].count;
-        oldClusters[k].points = NULL;
-        for (p = newClusters[k].points; p != NULL; p = p->next)
-            addPointToCluster(&oldClusters[k], p->point);
+        // no need to cp points in cluster, they are never used in the old cluster
+        // oldClusters[k].count = newClusters[k].count;
+        // oldClusters[k].points = NULL;
+        // for (p = newClusters[k].points; p != NULL; p = p->next)
+        //     addPointToCluster(&oldClusters[k], p->point);
         for (j = 0; j < newClusters[k].centroid.ndim; j++)
             oldClusters[k].centroid.coords[j] = newClusters[k].centroid.coords[j];
     }
@@ -154,10 +161,10 @@ void replaceEmptyClusters(int K, Cluster *clusters) {
     unsigned i, k, largest;
     PointListElem *p;
 
-    largest = findLargestCluster(K, clusters);
-    p = clusters[largest].points;
     for (k = 0; k < K; k++)
         if (clusters[k].count == 0) {
+            largest = findLargestCluster(K, clusters);
+            p = clusters[largest].points;
             for (i = 0; i < rand() % clusters[largest].count; i++)
                 p = p->next;
             addPointToCluster(&clusters[k], p->point);
@@ -168,17 +175,23 @@ void replaceEmptyClusters(int K, Cluster *clusters) {
 void updateCentroids(int K, Cluster *clusters) {
     unsigned i, j, k;
     double *mean;
-    PointListElem *p;
+    PointListElem *p, *tmp;
 
     mean = calloc(clusters[0].centroid.ndim, sizeof(double));
     for (k = 0; k < K; k++) {
         p = clusters[k].points;
+        tmp = p;
         for (i = 0; i < clusters[k].count; i++) {
             for (j = 0; j < clusters[k].centroid.ndim; j++) {
                 mean[j] += (double) p->point->coords[j] / (double) clusters[k].count;
             }
             p = p->next;
+            free(tmp);
+            tmp = p;
         }
+        free(p);
+        clusters[k].points = NULL;
+        clusters[k].count = 0;
         for (j = 0; j < clusters[k].centroid.ndim; j++) {
             clusters[k].centroid.coords[j] = (int) round(mean[j]);
             mean[j] = 0;
@@ -190,12 +203,13 @@ void updateCentroids(int K, Cluster *clusters) {
 void freeCluster(Cluster cluster) {
     PointListElem *p, *next;
 
-    p = cluster.points;
-    next = p->next;
-    while (next != NULL) {
-        free(p);
-        p = next;
+    if ((p = cluster.points) != NULL) {
         next = p->next;
+        while (next != NULL) {
+            free(p);
+            p = next;
+            next = p->next;
+        }
     }
     free(cluster.centroid.coords);
 }
