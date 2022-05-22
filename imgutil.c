@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <dirent.h>
+#include <string.h>
 #include "vq.h"
 
 #define IMG_READ_ERROR 1
@@ -114,15 +116,37 @@ unsigned getHeight(Img *img) {
     return img->height;
 }
 
-/** imgread test functions - erase later
-void testImgRead(char *inputFilename, char *outputFilename) {
-    Img *img;
+char **pgmImgsInDir(char *imgPath, unsigned *count) {
+    DIR *imgDir;
+    struct dirent *file;
+    char *filename = NULL;
+    char **imgsInDir = NULL;
 
-    img = readPgmImg(inputFilename);
-    writePgmImg(img, outputFilename);
+    if ((imgDir = opendir(imgPath)) == NULL)
+        exit(IMG_READ_ERROR);
+    *count = 0;
+    while ((file = readdir(imgDir)) != NULL) {
+        if (file->d_type != DT_REG)
+            continue;
+        filename = malloc(strlen(imgPath) + file->d_namlen + 2);
+        snprintf(filename, strlen(imgPath) + file->d_namlen + 2, "%s/%s", imgPath, file->d_name);
+        *count += 1;
+        imgsInDir = realloc(imgsInDir, *count * sizeof(char *));
+        imgsInDir[*count-1] = filename;
+        filename = NULL;
+    }
+    closedir(imgDir);
+    return imgsInDir;
 }
 
-**/
+void testImgRead(char *imgPath) {
+    unsigned count;
+    char **files;
+
+    files = pgmImgsInDir(imgPath, &count);
+    for (int i = 0; i < count; i++)
+        printf("Img %i: %s\n", i, files[i]);
+}
 
 
 

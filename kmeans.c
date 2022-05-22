@@ -273,6 +273,25 @@ Point *pointsFromBlockMatrix(BlockMatrix *vImg) {
     return pArray;
 }
 
+Point *pointsFromBlockMatrices(BlockMatrix **vImgs, unsigned nImgs, unsigned *nPoints) {
+    Point *points = NULL;
+    Block ***blocks;
+    unsigned i, j, k, nrows, ncols;
+
+    *nPoints = 0;
+    for (i = 0; i < nImgs; i++) {
+        nrows = getBlockMatrixHeight(vImgs[i]);
+        ncols = getBlockMatrixWidth(vImgs[i]);
+        points = realloc(points, (*nPoints + nrows * ncols) * sizeof(Point));
+        blocks = getBlockMatrixBlocks(vImgs[i]);
+        for (j = 0; j < nrows; j++)
+            for (k = 0; k < ncols; k++)
+                points[*nPoints + j * ncols + k] = *pointFromBlock(blocks[i][j]);
+        *nPoints = *nPoints + nrows * ncols;
+    }
+    return points;
+}
+
 unsigned getCluster(Point *p) {
     return p->cluster;
 }

@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include "vq.h"
 
 #define QUANTIZATION_ERROR 3
@@ -103,6 +102,21 @@ BlockMatrix *vectorizeImg(Img *img, unsigned blockWidth, unsigned blockHeight) {
     return vectorizedImg;
 }
 
+BlockMatrix **vectorizeImgs(char **imgFilenames, unsigned nImgs, unsigned blockWidth, unsigned blockHeight) {
+    unsigned i;
+    Img *img;
+    BlockMatrix **vImgs;
+
+    vImgs = malloc(nImgs * sizeof(BlockMatrix *));
+    for (i = 0; i < nImgs; i++) {
+        img = readPgmImg(imgFilenames[i]);
+        vImgs[i] = vectorizeImg(img, blockWidth, blockHeight);
+        freeImg(img);
+        img = NULL;
+    }
+    return vImgs;
+}
+
 unsigned **generateImgPixels(BlockMatrix *vectorizedImg, unsigned imgWidth, unsigned imgHeight) {
     unsigned i, j;
     unsigned **pixels;
@@ -164,8 +178,6 @@ unsigned *quantizeBlockMatrix(unsigned K, Cluster *clusters, BlockMatrix *vImg) 
 BlockMatrix *reconstructBlockMatrix(Cluster *clusters, unsigned* idxList, unsigned blockHeight, unsigned blockWidth, unsigned imgHeight, unsigned imgWidth) {
     unsigned nrows, ncols;
     BlockMatrix *vImg;
-    Block ***blocks;
-    unsigned i, j;
 
     if ((imgWidth % blockWidth != 0) || (imgHeight % blockHeight))
         exit(RECONSTRUCTION_ERROR);
@@ -183,11 +195,10 @@ void testVQ(char *filenameInput, char *filenameOutput) {
     BlockMatrix *vInImg, *vOutImg;
     Point *points;
     Cluster *clusters;
-    unsigned K = 700, blockWidth = 1, blockHeight = 1, *idxList;
+    unsigned K = 700, blockWidth = 2, blockHeight = 2, *idxList;
 
     ogImg = readPgmImg(filenameInput);
     vInImg = vectorizeImg(ogImg, blockWidth, blockHeight);
-    // todo agrupar todas as operacoes com pontos em uma funcao quantize
     points = pointsFromBlockMatrix(vInImg);
     clusters = calculateCentroids(K, points, getBlockMatrixHeight(vInImg) * getBlockMatrixWidth(vInImg), 10);
     idxList = quantizeBlockMatrix(K, clusters, vInImg);
