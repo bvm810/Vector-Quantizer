@@ -68,6 +68,17 @@ Img *readPgmImg(char *filename) {
     return img;
 }
 
+Img **readPgmImgs(char **filenames, unsigned nImg) {
+    Img **imgs;
+    unsigned i;
+
+    imgs = malloc(nImg * sizeof(Img *));
+    for (i = 0; i < nImg; i++) {
+        imgs[i] = readPgmImg(filenames[i]);
+    }
+    return imgs;
+}
+
 void freeImg(Img *img) {
     unsigned i;
 

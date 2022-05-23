@@ -5,6 +5,7 @@
 #include "vq.h"
 
 #define K_MEANS_ERROR 4
+#define LOG_ERROR 6
 
 struct point {
     unsigned cluster;
@@ -85,15 +86,10 @@ void addPointToCluster(Cluster *cluster, Point *point) {
 
     cluster->count += 1;
     new = malloc(sizeof(PointListElem));
-    new->next = NULL;
     new->point = point;
-    if ((tmp = cluster->points) == NULL) {
-        cluster->points = new;
-        return;
-    }
-    while (tmp->next != NULL)
-        tmp = tmp->next;
-    tmp->next = new;
+    tmp = cluster->points;
+    new->next = tmp;
+    cluster->points = new;
 }
 
 void removePointFromCluster(Cluster *cluster, Point *point) {
@@ -132,14 +128,9 @@ void assignCentroid(unsigned K, Cluster *clusters, Point *point) {
 
 void copyClusters(unsigned K, Cluster *oldClusters, Cluster *newClusters) {
     int k, j;
-    // PointListElem *p;
 
     for (k = 0; k < K; k++) {
         // no need to cp points in cluster, they are never used in the old cluster
-        // oldClusters[k].count = newClusters[k].count;
-        // oldClusters[k].points = NULL;
-        // for (p = newClusters[k].points; p != NULL; p = p->next)
-        //     addPointToCluster(&oldClusters[k], p->point);
         for (j = 0; j < newClusters[k].centroid.ndim; j++)
             oldClusters[k].centroid.coords[j] = newClusters[k].centroid.coords[j];
     }
@@ -158,15 +149,13 @@ unsigned findLargestCluster(unsigned K, Cluster *clusters) {
 }
 
 void replaceEmptyClusters(unsigned K, Cluster *clusters) {
-    unsigned i, k, largest;
+    unsigned k, largest;
     PointListElem *p;
 
     for (k = 0; k < K; k++)
         if (clusters[k].count == 0) {
             largest = findLargestCluster(K, clusters);
             p = clusters[largest].points;
-            for (i = 0; i < rand() % clusters[largest].count; i++)
-                p = p->next;
             addPointToCluster(&clusters[k], p->point);
             removePointFromCluster(&clusters[largest], p->point);
         }
@@ -183,7 +172,7 @@ void updateCentroids(unsigned K, Cluster *clusters) {
         tmp = p;
         for (i = 0; i < clusters[k].count; i++) {
             for (j = 0; j < clusters[k].centroid.ndim; j++) {
-                mean[j] += (double) p->point->coords[j] / (double) clusters[k].count;
+                mean[j] += (double) p->point->coords[j];
             }
             p = p->next;
             free(tmp);
@@ -191,11 +180,11 @@ void updateCentroids(unsigned K, Cluster *clusters) {
         }
         free(p);
         clusters[k].points = NULL;
-        clusters[k].count = 0;
         for (j = 0; j < clusters[k].centroid.ndim; j++) {
-            clusters[k].centroid.coords[j] = (int) round(mean[j]);
+            clusters[k].centroid.coords[j] = (int) round(mean[j] / clusters[k].count);
             mean[j] = 0;
         }
+        clusters[k].count = 0;
     }
     free(mean);
 }
@@ -212,6 +201,14 @@ void freeCluster(Cluster cluster) {
         }
     }
     free(cluster.centroid.coords);
+}
+
+void freeClusters(Cluster *clusters, unsigned K) {
+    unsigned i;
+
+    for (i = 0; i < K; i++)
+        freeCluster(clusters[i]);
+    free(clusters);
 }
 
 void printClusters(unsigned K, Cluster *clusters) {
@@ -236,6 +233,7 @@ Cluster *calculateCentroids(unsigned K, Point *points, unsigned nPoints, int see
     oldClusters = malloc(K * (sizeof(Cluster) + points[0].ndim * sizeof(int)));
     initializeCentroids(K, points, nPoints, newClusters, oldClusters);
     while (!kMeansEndCondition(K, oldClusters, newClusters)) {
+        // printClusters(K, newClusters);
         for (i = 0; i < nPoints; i++)
             assignCentroid(K, newClusters, &points[i]);
         replaceEmptyClusters(K, newClusters);
@@ -300,6 +298,10 @@ unsigned *getClusterCoords(Cluster *c) {
     return c->centroid.coords;
 }
 
+unsigned getClusterIdx(Cluster *c) {
+    return c->idx;
+}
+
 Block ***getIdxListBlocks(Cluster *clusters, unsigned const *idxList, unsigned nrows, unsigned ncols, unsigned blockWidth, unsigned blockHeight) {
     Block ***blocks;
     unsigned i, j;
@@ -312,6 +314,24 @@ Block ***getIdxListBlocks(Cluster *clusters, unsigned const *idxList, unsigned n
         }
     }
     return blocks;
+}
+
+void logCodebook(char *codebookFilename, char *mode, Cluster *clusters, unsigned K, unsigned blockWidth, unsigned blockHeight) {
+    FILE *fp;
+    unsigned i, j;
+
+    if ((fp = fopen(codebookFilename, mode)) == NULL)
+        exit(LOG_ERROR);
+    fprintf(fp, "%i,%i,%i,", K, blockHeight, blockWidth);
+    for (i = 0; i < K; i++) {
+        fprintf(fp, "%i,", clusters[i].idx);
+        for (j = 0; j < blockWidth * blockHeight; j++) {
+            fprintf(fp, "%i", clusters[i].centroid.coords[j]);
+            if ((i != K - 1) || (j != blockWidth * blockHeight - 1))
+                fprintf(fp, ",");
+        }
+    }
+    fprintf(fp, "\n");
 }
 
 

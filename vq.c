@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <time.h>
+#include <stdio.h>
 #include "vq.h"
 
 #define QUANTIZATION_ERROR 3
@@ -102,17 +104,13 @@ BlockMatrix *vectorizeImg(Img *img, unsigned blockWidth, unsigned blockHeight) {
     return vectorizedImg;
 }
 
-BlockMatrix **vectorizeImgs(char **imgFilenames, unsigned nImgs, unsigned blockWidth, unsigned blockHeight) {
+BlockMatrix **vectorizeImgs(Img **imgs, unsigned nImgs, unsigned blockWidth, unsigned blockHeight) {
     unsigned i;
-    Img *img;
     BlockMatrix **vImgs;
 
     vImgs = malloc(nImgs * sizeof(BlockMatrix *));
     for (i = 0; i < nImgs; i++) {
-        img = readPgmImg(imgFilenames[i]);
-        vImgs[i] = vectorizeImg(img, blockWidth, blockHeight);
-        freeImg(img);
-        img = NULL;
+        vImgs[i] = vectorizeImg(imgs[i], blockWidth, blockHeight);
     }
     return vImgs;
 }
@@ -195,12 +193,17 @@ void testVQ(char *filenameInput, char *filenameOutput) {
     BlockMatrix *vInImg, *vOutImg;
     Point *points;
     Cluster *clusters;
-    unsigned K = 700, blockWidth = 2, blockHeight = 2, *idxList;
+    unsigned K = 200, blockWidth = 2, blockHeight = 2, *idxList;
+    clock_t begin, end;
+    double elapsed;
 
     ogImg = readPgmImg(filenameInput);
     vInImg = vectorizeImg(ogImg, blockWidth, blockHeight);
     points = pointsFromBlockMatrix(vInImg);
+    begin = clock();
     clusters = calculateCentroids(K, points, getBlockMatrixHeight(vInImg) * getBlockMatrixWidth(vInImg), 10);
+    end = clock();
+    printf("K: %i, Blocos: %i x %i, Pontos: %i, Tempo Execucao: %f", K, blockHeight, blockWidth, getBlockMatrixWidth(vInImg) *getBlockMatrixHeight(vInImg), (double) (end - begin) / CLOCKS_PER_SEC);
     idxList = quantizeBlockMatrix(K, clusters, vInImg);
     vOutImg = reconstructBlockMatrix(clusters, idxList, blockHeight, blockWidth, getHeight(ogImg), getWidth(ogImg));
     outImg = deVectorizeImg(vOutImg);
