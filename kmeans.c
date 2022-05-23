@@ -73,11 +73,15 @@ void initializeCentroids(unsigned K, Point *points, unsigned nPoints, Cluster *n
 
 char kMeansEndCondition(unsigned K, Cluster *oldClusters, Cluster *newClusters) {
     int k, i;
+    double err;
 
-    for (k = 0; k < K; k++)
+    for (k = 0; k < K; k++) {
+        err = 0;
         for (i = 0; i < newClusters[0].centroid.ndim; i++)
-            if (oldClusters[k].centroid.coords[i] != newClusters[k].centroid.coords[i])
-                return 0;
+            err += (double) (oldClusters[k].centroid.coords[i] - newClusters[k].centroid.coords[i]);
+        if (err/(double) newClusters[0].centroid.ndim > 12.75)
+            return 0;
+    }
     return 1;
 }
 
@@ -224,7 +228,8 @@ void printClusters(unsigned K, Cluster *clusters) {
 
 Cluster *calculateCentroids(unsigned K, Point *points, unsigned nPoints, int seed) {
     Cluster *oldClusters, *newClusters;
-    int i;
+    int i, counter = 1;
+    clock_t begin, end;
 
     if (nPoints < K)
         exit(K_MEANS_ERROR);
@@ -234,11 +239,17 @@ Cluster *calculateCentroids(unsigned K, Point *points, unsigned nPoints, int see
     initializeCentroids(K, points, nPoints, newClusters, oldClusters);
     while (!kMeansEndCondition(K, oldClusters, newClusters)) {
         // printClusters(K, newClusters);
+        // printf("Iteracao %i ... ", counter);
+        // fflush(stdout);
+        begin = clock();
         for (i = 0; i < nPoints; i++)
             assignCentroid(K, newClusters, &points[i]);
         replaceEmptyClusters(K, newClusters);
         copyClusters(K, oldClusters, newClusters);
         updateCentroids(K, newClusters);
+        end = clock();
+        // printf("tempo de execucao %f\n", (double) (end - begin)/CLOCKS_PER_SEC);
+        counter++;
     }
     for (i = 0; i < K; i++)
         freeCluster(oldClusters[i]);
@@ -267,13 +278,13 @@ Point *pointsFromBlockMatrix(BlockMatrix *vImg) {
     pArray = malloc(getBlockMatrixWidth(vImg) * getBlockMatrixHeight(vImg) * sizeof(Point));
     for (i = 0; i < nrows; i++)
         for (j = 0; j < ncols; j++)
-            pArray[i * ncols + j] = *pointFromBlock(blocks[i][j]);
+            pArray[i * ncols + j] = (Point) {0, getBlockHeight(blocks[i][j]) * getBlockWidth(blocks[i][j]), getBlockVector(blocks[i][j])};
     return pArray;
 }
 
 Point *pointsFromBlockMatrices(BlockMatrix **vImgs, unsigned nImgs, unsigned *nPoints) {
     Point *points = NULL;
-    Block ***blocks;
+    Block ***blocks, *b;
     unsigned i, j, k, nrows, ncols;
 
     *nPoints = 0;
@@ -283,8 +294,10 @@ Point *pointsFromBlockMatrices(BlockMatrix **vImgs, unsigned nImgs, unsigned *nP
         points = realloc(points, (*nPoints + nrows * ncols) * sizeof(Point));
         blocks = getBlockMatrixBlocks(vImgs[i]);
         for (j = 0; j < nrows; j++)
-            for (k = 0; k < ncols; k++)
-                points[*nPoints + j * ncols + k] = *pointFromBlock(blocks[i][j]);
+            for (k = 0; k < ncols; k++) {
+                b = blocks[j][k];
+                points[*nPoints + j * ncols + k] = (Point) {0,getBlockHeight(b) * getBlockWidth(b),getBlockVector(b)};
+            }
         *nPoints = *nPoints + nrows * ncols;
     }
     return points;
@@ -296,10 +309,6 @@ unsigned getCluster(Point *p) {
 
 unsigned *getClusterCoords(Cluster *c) {
     return c->centroid.coords;
-}
-
-unsigned getClusterIdx(Cluster *c) {
-    return c->idx;
 }
 
 Block ***getIdxListBlocks(Cluster *clusters, unsigned const *idxList, unsigned nrows, unsigned ncols, unsigned blockWidth, unsigned blockHeight) {

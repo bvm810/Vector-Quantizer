@@ -25,22 +25,21 @@ Block ***getBlockMatrixBlocks(BlockMatrix *vImg);
 Block *createBlockFromCluster(Cluster *cluster, unsigned width, unsigned height);
 BlockMatrix *vectorizeImg(Img *img, unsigned blockWidth, unsigned blockHeight);
 BlockMatrix **vectorizeImgs(Img **imgs, unsigned nImgs, unsigned blockWidth, unsigned blockHeight);
+Img *deVectorizeImg(BlockMatrix *vectorizedImg);
 void freeBlockMatrix(BlockMatrix *vectorizedImg);
 
 Cluster *calculateCentroids(unsigned K, Point *points, unsigned nPoints, int seed);
 void assignCentroid(unsigned K, Cluster *clusters, Point *point);
 Point *pointsFromBlockMatrix(BlockMatrix *vImg);
 Point *pointsFromBlockMatrices(BlockMatrix **vImgs, unsigned nImgs, unsigned *nPoints);
-Point *pointsFromImgFilenames(char **filenames, unsigned nImg, unsigned blockHeight, unsigned blockWidth, unsigned *nPoints);
-Point *pointFromBlock(Block *b);
 unsigned getCluster(Point *p);
 unsigned *getClusterCoords(Cluster *c);
 void freeClusters(Cluster *clusters, unsigned K);
-void freePoints(Point *p, unsigned nPoints);
+Point *pointFromBlock(Block *b);
 void logCodebook(char *codebookFilename, char *mode, Cluster *clusters, unsigned K, unsigned blockWidth, unsigned blockHeight);
 Block ***getIdxListBlocks(Cluster *clusters, unsigned const *idxList, unsigned nrows, unsigned ncols, unsigned blockWidth, unsigned blockHeight);
 
 // test functions - erase later
-void testImgRead(char *imgPath);
+// void testImgRead(char *imgPath);
 void testVQ(char *filenameInput, char *filenameOutput);
 void train(unsigned K, unsigned blockWidth, unsigned blockHeight, char *imgPath, int seed, char *cbookName, char *mode);

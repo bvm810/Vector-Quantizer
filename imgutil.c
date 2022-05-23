@@ -45,6 +45,7 @@ void readPgmPixels(FILE *fp, Img *img) {
     for (i = 0; i < img->height; i++) {
         img->pixels[i] = malloc(img->width * sizeof(int));
         for (j = 0; j < img->width; j++) {
+            img->pixels[i][j] = 0;
             if (fread(&img->pixels[i][j], 1, 1, fp) != 1)
                 exit(IMG_READ_ERROR);
         }
