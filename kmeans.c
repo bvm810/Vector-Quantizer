@@ -237,7 +237,7 @@ Cluster *calculateCentroids(unsigned K, Point *points, unsigned nPoints, int see
     newClusters = malloc(K * (sizeof(Cluster) + points[0].ndim * sizeof(int)));
     oldClusters = malloc(K * (sizeof(Cluster) + points[0].ndim * sizeof(int)));
     initializeCentroids(K, points, nPoints, newClusters, oldClusters);
-    while (!kMeansEndCondition(K, oldClusters, newClusters)) {
+    while (!kMeansEndCondition(K, oldClusters, newClusters) && (counter < 41)) {
         // printClusters(K, newClusters);
         // printf("Iteracao %i ... ", counter);
         // fflush(stdout);
@@ -340,7 +340,61 @@ void logCodebook(char *codebookFilename, char *mode, Cluster *clusters, unsigned
                 fprintf(fp, ",");
         }
     }
-    fprintf(fp, "\n");
+    fprintf(fp, ";\n");
+    fclose(fp);
+}
+
+char *readCodebookInfo(FILE *fp, char stopChar) {
+    char *buffer, ch;
+    int i = 0;
+
+    buffer = NULL;
+    while ((ch = (char) getc(fp)) != stopChar) {
+        buffer = realloc(buffer, 1+i);
+        *(buffer + i) = ch;
+        i++;
+    }
+    return buffer;
+}
+
+Cluster *readCodebookCluster(FILE *fp, unsigned ndim, unsigned K) {
+    Cluster * clusters;
+    char stopChar, ch;
+    unsigned i, j, idx;
+
+    clusters = malloc(K * (sizeof(Cluster) + ndim * sizeof(int)));
+    for (i = 0; i < K; i++) {
+        idx = (unsigned int) strtol(readCodebookInfo(fp, ','), NULL, 10);
+        clusters[i] = (Cluster) {idx, 0, {idx, ndim, NULL}, NULL};
+        clusters[i].centroid.coords = malloc(ndim * sizeof(int));
+        for (j = 0; j < ndim; j++) {
+            stopChar = ((i == K - 1) && (j == ndim -1)) ? ';' : ',';
+            clusters[i].centroid.coords[j] = (unsigned int) strtol(readCodebookInfo(fp, stopChar), NULL, 10);
+        }
+    }
+    return clusters;
+}
+
+Cluster *readCodebook(char *filename, unsigned id, unsigned *K, unsigned *blockWidth, unsigned *blockHeight) {
+    FILE *fp;
+    char ch = '0';
+    Cluster *clusters;
+    unsigned ndim, line = 0;
+
+    if ((fp = fopen(filename, "r")) == NULL )
+        exit(LOG_ERROR);
+    while ((line < id) && (ch != EOF)) {
+        while ((ch != '\n') && (ch != EOF))
+            ch = (char) getc(fp);
+        line++;
+    }
+    *K = (unsigned int) strtol(readCodebookInfo(fp, ','), NULL, 10);
+    *blockHeight = (unsigned int) strtol(readCodebookInfo(fp, ','), NULL, 10);
+    *blockWidth = (unsigned int) strtol(readCodebookInfo(fp, ','), NULL, 10);
+    ndim = (*blockHeight) * (*blockWidth);
+    clusters = readCodebookCluster(fp, ndim, *K);
+    fclose(fp);
+    return clusters;
 }
 
 

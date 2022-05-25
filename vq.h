@@ -1,3 +1,4 @@
+#define INPUT_ERROR 7
 
 typedef struct img Img;
 typedef struct block Block;
@@ -36,6 +37,8 @@ unsigned getCluster(Point *p);
 unsigned *getClusterCoords(Cluster *c);
 void freeClusters(Cluster *clusters, unsigned K);
 Point *pointFromBlock(Block *b);
+void printClusters(unsigned K, Cluster *clusters);
+Cluster *readCodebook(char *filename, unsigned id, unsigned *K, unsigned *blockWidth, unsigned *blockHeight);
 void logCodebook(char *codebookFilename, char *mode, Cluster *clusters, unsigned K, unsigned blockWidth, unsigned blockHeight);
 Block ***getIdxListBlocks(Cluster *clusters, unsigned const *idxList, unsigned nrows, unsigned ncols, unsigned blockWidth, unsigned blockHeight);
 
