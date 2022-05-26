@@ -69,7 +69,7 @@ has the following steps:
 The rate vs. distortion curve for the test images with the codebook provided is below:
 
 <p align="center">
-    <img src="./img/rate_distortion.png" height="400" width="750"/>
+    <img src="img/report/rate_distortion.png" height="400" width="750"/>
 </p>
 
 It is possible to see that the PSNR increases with the rate, as expected.
@@ -79,9 +79,9 @@ As an example, below are three versions of the `cameraman` image using
 are: (32.92,2.24), (25.91,0.56), and (22.35,0.14).
 
 <p align="center">
-    <img src="./img/cameraman_K500_W2_H2_screen.png" height="256" width="256"/>
-    <img src="./img/cameraman_K500_W4_H4_screen.png" height="256" width="256"/>
-    <img src="./img/cameraman_K500_W8_H8_screen.png" height="256" width="256"/>
+    <img src="img/report/cameraman_K500_W2_H2_screen.png" height="256" width="256"/>
+    <img src="img/report/cameraman_K500_W4_H4_screen.png" height="256" width="256"/>
+    <img src="img/report/cameraman_K500_W8_H8_screen.png" height="256" width="256"/>
 </p>
 
 Similarly, below are the quantizations of the `gold` image using blocks of 2x2, and 
@@ -89,9 +89,9 @@ using 200, 400, and 600 clusters. The PSNRs and rates are: (33.83,1.91), (35.23,
 and (36.03,2.31).
 
 <p align="center">
-    <img src="./img/gold_K200_W2_H2_screen.png" height="360" width="288"/>
-    <img src="./img/gold_K400_W2_H2_screen.png" height="360" width="288"/>
-    <img src="./img/gold_K600_W2_H2_screen.png" height="360" width="288"/>
+    <img src="img/report/gold_K200_W2_H2_screen.png" height="360" width="288"/>
+    <img src="img/report/gold_K400_W2_H2_screen.png" height="360" width="288"/>
+    <img src="img/report/gold_K600_W2_H2_screen.png" height="360" width="288"/>
 </p>
 
 The worst results were obtained for the `pp1205` image, where it is hard to distinguish
@@ -99,7 +99,7 @@ the sentences in the paper. Below, a quantized version with 2x2 blocks and 800 c
 PSNR and rate are (28.98,2.41).
 
 <p align="center">
-    <img src="./img/pp1205_K800_W2_H2_screen.png" height="512" width="512"/>
+    <img src="img/report/pp1205_K800_W2_H2_screen.png" height="512" width="512"/>
 </p>
 
 ## Credits
