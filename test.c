@@ -23,19 +23,19 @@ char *generateOutputPath(char *ogName, char *dirName, unsigned K, unsigned W, un
     ogNameLen += 1;
     treatedOgName = realloc(treatedOgName, ogNameLen);
     treatedOgName[ogNameLen - 1] = '\0';
-    outNameLen = strlen(dirName) + strlen(treatedOgName) + 16 + (int) ceil(log10(K)) + (int) ceil(log10(W)) + (int) ceil(log10(H));
+    outNameLen = strlen(dirName) + strlen(treatedOgName) + 20 + (int) ceil(log10(K)) + (int) ceil(log10(W)) + (int) ceil(log10(H));
     outName = malloc(outNameLen);
     snprintf(outName, outNameLen, "%s/%s_K%i_W%i_H%i.pgm", dirName, treatedOgName, K, W, H);
     free(treatedOgName);
     return outName;
 }
 
-void logParamResults(Img *inImg, Img *outImg, unsigned K, unsigned width, unsigned height, char *logfileName) {
+void logParamResults(Img *inImg, Img *outImg, unsigned K, unsigned width, unsigned height, char *logfileName, char *outName) {
     FILE *fp;
 
     if ((fp = fopen(logfileName, "a")) == NULL)
         exit(LOG_ERROR);
-    fprintf(fp, "%i,%i,%i,%f,%f\n", K, height, width, psnr(inImg, outImg), rate(K, height * width));
+    fprintf(fp, "%i,%i,%i,%f,%f,%s\n", K, height, width, psnr(inImg, outImg), rate(K, height * width),outName);
     fclose(fp);
 }
 
@@ -53,7 +53,7 @@ void benchmarkParamsOnImage(char *imgName, char *outputDir, char *cbookName, uns
     vOutImg = reconstructBlockMatrix(clusters, idxList, blockHeight, blockWidth, getHeight(inImg), getWidth(inImg));
     outImg = deVectorizeImg(vOutImg);
     outName = generateOutputPath(imgName, outputDir, K, blockWidth, blockHeight);
-    logParamResults(inImg, outImg, K, blockWidth, blockHeight, logfileName);
+    logParamResults(inImg, outImg, K, blockWidth, blockHeight, logfileName, outName);
     writePgmImg(outImg, outName);
     freeClusters(clusters, K);
     free(idxList);

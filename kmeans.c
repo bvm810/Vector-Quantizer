@@ -353,6 +353,8 @@ char *readCodebookInfo(FILE *fp, char stopChar) {
         *(buffer + i) = ch;
         i++;
     }
+    buffer = realloc(buffer, 1+i);
+    buffer[i] = '\0';
     return buffer;
 }
 
