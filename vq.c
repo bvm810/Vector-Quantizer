@@ -126,7 +126,7 @@ unsigned **generateImgPixels(BlockMatrix *vectorizedImg, unsigned imgWidth, unsi
     for (i = 0; i < imgHeight; i++) {
         pixels[i] = malloc(imgWidth * sizeof(int));
         for (j = 0; j < imgWidth; j++) {
-            pixels[i][j] = vectorizedImg->blocks[i / blockHeight][j / blockHeight]->vector[blockWidth * (i % blockHeight) + (j % blockWidth)];
+            pixels[i][j] = vectorizedImg->blocks[i / blockHeight][j / blockWidth]->vector[blockWidth * (i % blockHeight) + (j % blockWidth)];
         }
     }
     return pixels;

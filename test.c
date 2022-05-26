@@ -14,6 +14,7 @@ char *generateOutputPath(char *ogName, char *dirName, unsigned K, unsigned W, un
         treatedOgName = realloc(treatedOgName, ogNameLen);
         treatedOgName[ogNameLen - 1] = *p;
         if (*p == '/') {
+            strncpy(treatedOgName, "", ogNameLen);
             ogNameLen = 0;
             free(treatedOgName);
             treatedOgName = NULL;
@@ -22,7 +23,7 @@ char *generateOutputPath(char *ogName, char *dirName, unsigned K, unsigned W, un
     ogNameLen += 1;
     treatedOgName = realloc(treatedOgName, ogNameLen);
     treatedOgName[ogNameLen - 1] = '\0';
-    outNameLen = strlen(dirName) + strlen(treatedOgName) + 12 + (int) ceil(log10(K)) + (int) ceil(log10(W)) + (int) ceil(log10(H));
+    outNameLen = strlen(dirName) + strlen(treatedOgName) + 16 + (int) ceil(log10(K)) + (int) ceil(log10(W)) + (int) ceil(log10(H));
     outName = malloc(outNameLen);
     snprintf(outName, outNameLen, "%s/%s_K%i_W%i_H%i.pgm", dirName, treatedOgName, K, W, H);
     free(treatedOgName);
@@ -40,7 +41,7 @@ void logParamResults(Img *inImg, Img *outImg, unsigned K, unsigned width, unsign
 
 void benchmarkParamsOnImage(char *imgName, char *outputDir, char *cbookName, unsigned cbookIdx, char *logfileName) {
     unsigned K, blockWidth, blockHeight, *idxList = NULL;
-    char *outName;
+    char *outName = NULL;
     Cluster *clusters = NULL;
     Img *inImg = NULL, *outImg = NULL;
     BlockMatrix *vInImg = NULL, *vOutImg = NULL;
@@ -56,8 +57,6 @@ void benchmarkParamsOnImage(char *imgName, char *outputDir, char *cbookName, uns
     writePgmImg(outImg, outName);
     freeClusters(clusters, K);
     free(idxList);
-
-
 }
 
 unsigned countCodebooks(char *codebookName) {
