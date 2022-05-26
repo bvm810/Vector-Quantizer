@@ -1,3 +1,4 @@
+#define LOG_ERROR 6
 #define INPUT_ERROR 7
 
 typedef struct img Img;
@@ -16,6 +17,8 @@ void freeImg(Img *img);
 Img *createPgmImg(unsigned height, unsigned width, unsigned pixelSize, unsigned **pixels);
 char **pgmImgsInDir(char *imgPath, unsigned *count);
 Img **readPgmImgs(char **filenames, unsigned nImg);
+double psnr(Img *inImg, Img *outImg);
+double rate(unsigned K, unsigned ndim);
 
 unsigned getBlockWidth(Block *b);
 unsigned getBlockHeight(Block *b);
@@ -27,6 +30,8 @@ Block *createBlockFromCluster(Cluster *cluster, unsigned width, unsigned height)
 BlockMatrix *vectorizeImg(Img *img, unsigned blockWidth, unsigned blockHeight);
 BlockMatrix **vectorizeImgs(Img **imgs, unsigned nImgs, unsigned blockWidth, unsigned blockHeight);
 Img *deVectorizeImg(BlockMatrix *vectorizedImg);
+unsigned *quantizeBlockMatrix(unsigned K, Cluster *clusters, BlockMatrix *vImg);
+BlockMatrix *reconstructBlockMatrix(Cluster *clusters, unsigned* idxList, unsigned blockHeight, unsigned blockWidth, unsigned imgHeight, unsigned imgWidth);
 void freeBlockMatrix(BlockMatrix *vectorizedImg);
 
 Cluster *calculateCentroids(unsigned K, Point *points, unsigned nPoints, int seed);

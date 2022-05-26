@@ -5,7 +5,6 @@
 #include "vq.h"
 
 #define K_MEANS_ERROR 4
-#define LOG_ERROR 6
 
 struct point {
     unsigned cluster;
@@ -384,8 +383,9 @@ Cluster *readCodebook(char *filename, unsigned id, unsigned *K, unsigned *blockW
     if ((fp = fopen(filename, "r")) == NULL )
         exit(LOG_ERROR);
     while ((line < id) && (ch != EOF)) {
-        while ((ch != '\n') && (ch != EOF))
+        while ((ch != ';') && (ch != EOF))
             ch = (char) getc(fp);
+        ch = (char) getc(fp);
         line++;
     }
     *K = (unsigned int) strtol(readCodebookInfo(fp, ','), NULL, 10);

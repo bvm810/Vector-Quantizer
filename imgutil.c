@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <dirent.h>
 #include <string.h>
+#include <math.h>
 #include "vq.h"
 
 #define IMG_READ_ERROR 1
@@ -158,6 +159,25 @@ void testImgRead(char *imgPath) {
     files = pgmImgsInDir(imgPath, &count);
     for (int i = 0; i < count; i++)
         printf("Img %i: %s\n", i, files[i]);
+}
+
+double psnr(Img *inImg, Img *outImg) {
+    double mse = 0, psnr;
+    unsigned i, j;
+
+    for (i = 0; i < inImg->height; i++)
+        for (j = 0; j < inImg->width; j++)
+            mse += (inImg->pixels[i][j] - outImg->pixels[i][j]) * (inImg->pixels[i][j] - outImg->pixels[i][j]);
+    mse = mse / ((double) (inImg->height * inImg->width));
+    if (mse != 0)
+        psnr = 10 * log10((255 * 255) / mse);
+    else
+        psnr = 100;
+    return psnr;
+}
+
+double rate(unsigned K, unsigned ndim) {
+    return log2(K) / ndim;
 }
 
 

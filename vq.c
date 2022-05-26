@@ -193,7 +193,7 @@ void testVQ(char *filenameInput, char *filenameOutput) {
     BlockMatrix *vInImg, *vOutImg;
     Point *points;
     Cluster *clusters;
-    unsigned K = 700, blockWidth = 2, blockHeight = 2, *idxList;
+    unsigned K = 200, blockWidth = 2, blockHeight = 2, *idxList;
     clock_t begin, end;
 
     ogImg = readPgmImg(filenameInput);
